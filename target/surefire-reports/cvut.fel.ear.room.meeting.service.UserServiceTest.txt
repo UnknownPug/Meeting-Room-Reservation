@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: cvut.fel.ear.room.meeting.service.UserServiceTest
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.019 s - in cvut.fel.ear.room.meeting.service.UserServiceTest

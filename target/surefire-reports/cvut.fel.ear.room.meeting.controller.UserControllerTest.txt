@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: cvut.fel.ear.room.meeting.controller.UserControllerTest
+-------------------------------------------------------------------------------
+Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.346 s - in cvut.fel.ear.room.meeting.controller.UserControllerTest

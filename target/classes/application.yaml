@@ -1,0 +1,25 @@
+server:
+  port: 1010
+  error:
+    whitelabel:
+      enabled: false
+    path: /error
+  servlet:
+    context-path: /
+
+spring:
+  datasource:
+    password: jWrArwVHJUSiSUxCvch4gRI
+    username: ear2022zs_5
+    url: jdbc:postgresql://kbss.felk.cvut.cz:5433/ear2022zs_5
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+  security:
+    user:
+      name: user
+      password: password
+  mvc:
+    servlet:
+      path: /

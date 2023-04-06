@@ -1,0 +1,12 @@
+reservation.room.meeting.sem.ear
+reservation.room.meeting.sem.ear.controller
+reservation.room.meeting.sem.ear.controller.handler
+reservation.room.meeting.sem.ear.entity
+reservation.room.meeting.sem.ear.entity.entityConnection
+reservation.room.meeting.sem.ear.environment
+reservation.room.meeting.sem.ear.exception
+reservation.room.meeting.sem.ear.dto.request
+reservation.room.meeting.sem.ear.dto.response
+reservation.room.meeting.sem.ear.repository
+reservation.room.meeting.sem.ear.repository.repositoryConnection
+reservation.room.meeting.sem.ear.service

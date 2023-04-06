@@ -1,0 +1,15 @@
+configs:
+  web-config:
+    file: src/main/resources/application.yaml
+
+services:
+  db:
+    image: "postgres"
+    container_name: "ear-mrr"
+    restart: always
+    environment:
+      - POSTGRES_USER=ear2022zs_5
+      - POSTGRES_PASSWORD=jWrArwVHJUSiSUxCvch4gRI
+      - POSTGRES_DB=ear2022zs_5
+    ports:
+      - "5433:5432"
