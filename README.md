@@ -6,7 +6,7 @@
 
 ### All documentations can be found in [docs folder](https://github.com/UnknownPug/Meeting-Room-Reservation/tree/main/docs)
 
-### The final document in Czech 🇨🇿: [CP2](https://github.com/UnknownPug/Meeting-Room-Reservation/blob/main/docs/CP2.docx)
-### The final document in English 🇬🇧: [CP2](https://github.com/UnknownPug/Meeting-Room-Reservation/blob/main/docs/CP2-en.docx)
+### The final document in [Czech 🇨🇿](https://github.com/UnknownPug/Meeting-Room-Reservation/blob/main/docs/CP2-cz.pdf)
+### The final document in [English 🇬🇧](https://github.com/UnknownPug/Meeting-Room-Reservation/blob/main/docs/CP2-en.pdf)
 
 ## Enjoy! 🤠
