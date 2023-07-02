@@ -1,6 +1,5 @@
 package cvut.fel.ear.room.meeting.service;
 
-import cvut.fel.ear.room.meeting.entity.Admin;
 import cvut.fel.ear.room.meeting.entity.Reservation;
 import cvut.fel.ear.room.meeting.entity.Room;
 import cvut.fel.ear.room.meeting.exception.ApplicationException;
@@ -8,6 +7,8 @@ import cvut.fel.ear.room.meeting.repository.AdminRepository;
 import cvut.fel.ear.room.meeting.repository.ReservationRepository;
 import cvut.fel.ear.room.meeting.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,12 @@ public class RoomService {
         this.reservationRepository = reservationRepository;
         this.repository = repository;
         this.adminRepository = adminRepository1;
+    }
+
+    public Room getRoomById(Long roomId) {
+        return repository.findById(roomId).orElseThrow(
+                () -> new ApplicationException(
+                        HttpStatus.NOT_FOUND, "Room with id " + roomId + " does not exist."));
     }
 
     public Collection<Room> getRooms() {
@@ -55,10 +62,10 @@ public class RoomService {
         Room newRoom = new Room();
         List<Room> rooms = repository.findAllByName(name);
         if (pricePerHour == null) {
-            throw new ApplicationException("Room price must be set.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "Room price must be set.");
         }
         if (!rooms.isEmpty()) {
-            throw new ApplicationException("Room with name " + name + " is already taken.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "Room with name " + name + " is already taken.");
         }
         newRoom.setRoomCapacity(0);
         newRoom.setName(name);
@@ -70,18 +77,18 @@ public class RoomService {
 
     public void updateRoom(Long roomId, String name, Double pricePerHour, String description) {
         Room room = repository.findById(roomId).orElseThrow(
-                () -> new ApplicationException("Room with id " + roomId + " does not exist.", HttpStatus.NOT_FOUND));
+                () -> new ApplicationException(HttpStatus.NOT_FOUND, "Room with id " + roomId + " does not exist."));
         if (name != null && !Objects.equals(room.getName(), name)) {
             room.setName(name);
             room.setPricePerHour(pricePerHour);
         } else {
-            throw new ApplicationException("Room name already set or not filled.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "Room name already set or not filled.");
         }
         if (description != null && description.length() <= 20L) {
             room.setText(description);
         } else {
             throw new ApplicationException(
-                    "Description must be filled and can contain lup to 20 characters.", HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST, "Description must be filled and can contain lup to 20 characters.");
         }
         repository.save(room);
     }
@@ -89,58 +96,59 @@ public class RoomService {
     public void deleteRoom(Long roomId) {
         boolean exists = repository.existsById(roomId);
         if (!exists) {
-            throw new ApplicationException("Room with id " + roomId + " does not exist.", HttpStatus.NOT_FOUND);
+            throw new ApplicationException(HttpStatus.NOT_FOUND,
+                    "Room with id " + roomId + " does not exist.");
         }
         // Check if there are any reservations for the room
-        boolean roomHasReservation = reservationRepository.findAllByRoomReservationNotNull()
-                .stream()
-                .anyMatch(reservation -> reservation.getRoomReservation().getId().equals(roomId));
+        boolean roomHasReservation = reservationRepository.existsByRoomReservationId(roomId);
         if (roomHasReservation) {
-            throw new ApplicationException(
-                    "Room with id " + roomId + " cannot be deleted " +
-                            "because it is reserved by user.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "Room with id " + roomId + " cannot be deleted because it is reserved by a user.");
         }
         // Check if there are any admins controlling the room
-        boolean roomIsControlledByAdmin = adminRepository.findAllByAdminControlRoomNotNull()
-                .stream()
-                .map(Admin::getAdminControlRoom)
-                .anyMatch(roomSet -> roomSet.contains(repository.getOne(roomId)));
+        boolean roomIsControlledByAdmin = adminRepository.existsByAdminControlRoomContains(repository.getOne(roomId));
         if (roomIsControlledByAdmin) {
-            throw new ApplicationException(
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
                     "Room with id " + roomId + " cannot be deleted " +
-                            "because it is controlled by one or more admins.", HttpStatus.BAD_REQUEST);
+                            "because it is controlled by one or more admins.");
         }
         repository.deleteById(roomId);
     }
 
     public Room getRoomByName(String name) {
         if (repository.findByName(name) == null) {
-            throw new ApplicationException("Name does not exist.", HttpStatus.NOT_FOUND);
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Name does not exist.");
         }
         return repository.findByName(name);
     }
 
-    public ArrayList<Room> getRoomsByNumAsc(Integer num) {
-        return getRoomsNum(repository.findAllByIdIsNotNullOrderByPricePerHourAsc(), num);
-    }
-
-    public ArrayList<Room> getRoomsByNumDesc(Integer num) {
-        return getRoomsNum(repository.findAllByIdIsNotNullOrderByPricePerHourDesc(), num);
-    }
-
-    public ArrayList<Room> getRoomsByCapacityAsc(Integer num) {
-        return getRoomsNum(repository.findAllByIdIsNotNullOrderByRoomCapacityAsc(), num);
-    }
-
-    private ArrayList<Room> getRoomsNum(ArrayList<Room> rooms, Integer num) {
-        ArrayList<Room> printRooms = new ArrayList<>();
-        if (num > repository.count()) {
+    public List<Room> getRoomsByNumAsc(Integer num) {
+        Pageable pageable = PageRequest.of(0, num);
+        List<Room> rooms = repository.findTopNByPricePerHourAsc(pageable);
+        if (rooms.size() < num) {
             throw new ApplicationException(
-                    "Maximum top number is: " + repository.count() + ".", HttpStatus.BAD_REQUEST);
+                    HttpStatus.BAD_REQUEST, "Maximum top number is: " + rooms.size() + ".");
         }
-        for (int i = 0; i < num; i++) {
-            printRooms.add(rooms.get(i));
+        return rooms;
+    }
+
+    public List<Room> getRoomsByNumDesc(Integer num) {
+        Pageable pageable = PageRequest.of(0, num);
+        List<Room> rooms = repository.findTopNByPricePerHourDesc(pageable);
+        if (rooms.size() < num) {
+            throw new ApplicationException(
+                    HttpStatus.BAD_REQUEST, "Maximum top number is: " + rooms.size() + ".");
         }
-        return printRooms;
+        return rooms;
+    }
+
+    public List<Room> getRoomsByCapacityAsc(Integer num) {
+        Pageable pageable = PageRequest.of(0, num);
+        List<Room> rooms = repository.findTopNByRoomCapacityAsc(pageable);
+        if (rooms.size() < num) {
+            throw new ApplicationException(
+                    HttpStatus.BAD_REQUEST, "Maximum top number is: " + rooms.size() + ".");
+        }
+        return rooms;
     }
 }

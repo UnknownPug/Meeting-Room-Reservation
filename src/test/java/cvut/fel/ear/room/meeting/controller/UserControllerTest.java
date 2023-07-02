@@ -13,11 +13,9 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
@@ -33,39 +31,55 @@ class UserControllerTest {
     }
 
     @Test
-    void testGetUserById() {
-        Long userId = 1L;
-        Optional<User> user = Optional.of(new User());
-        when(service.getUserById(userId)).thenReturn(user);
-        ResponseEntity<Optional<User>> response = controller.getUserById(userId);
+    void testGetUserByIdReturnsValidUser() {
+        Long id = 123L;
+        User user = new User();
+
+        when(service.getUserById(id)).thenReturn(user);
+
+        ResponseEntity<User> response = controller.getUser(id, null, null);
+
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(user, response.getBody());
+        verify(service, times(1)).getUserById(id);
     }
 
     @Test
-    void testGetUserByIdWithNullId() {
-        assertThrows(ApplicationException.class, () -> controller.getUserById(null));
-    }
-
-    @Test
-    void getUserByUsername_shouldReturnUser() {
-        // given
+    void testGetUserByUsernameReturnsValidUser() {
         String username = "testuser";
         User user = new User();
-        user.setUsername(username);
+
         when(service.getUserByUsername(username)).thenReturn(user);
-        ResponseEntity<User> responseEntity = controller.getUserByUsername(username);
-        assertEquals(HttpStatus.OK, responseEntity.getStatusCode());
-        assertEquals(user, responseEntity.getBody());
+
+        ResponseEntity<User> response = controller.getUser(null, username, null);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(user, response.getBody());
+        verify(service, times(1)).getUserByUsername(username);
     }
 
     @Test
-    void getUserByUsername_shouldThrowApplicationException_whenUsernameIsNull() {
-        assertThrows(ApplicationException.class, () -> controller.getUserByUsername(null));
+    void testGetUserByEmailReturnsValidUser() {
+        String email = "test@example.com";
+        User user = new User();
+
+        when(service.getUserByEmail(email)).thenReturn(user);
+
+        ResponseEntity<User> response = controller.getUser(null, null, email);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(user, response.getBody());
+        verify(service, times(1)).getUserByEmail(email);
     }
 
     @Test
-    public void testGetUsersFilterAsc() {
+    void getUserWithInvalidRequestThrowsApplicationException() {
+        assertThrows(ApplicationException.class, () ->
+                controller.getUser(null, "testuser", "test@example.com"));
+    }
+
+    @Test
+    public void testGetUsersReturnsSortedUsersListAsc() {
         List<User> users = new ArrayList<>();
         User user1 = new User();
         user1.setUsername("user1");
@@ -76,14 +90,14 @@ class UserControllerTest {
 
         when(service.getUsersAsc()).thenReturn(users);
 
-        ResponseEntity<List<User>> response = controller.getUsersFilter("asc");
+        ResponseEntity<List<User>> response = controller.getSortedUsers("asc");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(users, response.getBody());
     }
 
     @Test
-    public void testGetUsersFilterDesc() {
+    public void testGetUsersReturnsSortedUsersListDesc() {
         List<User> users = new ArrayList<>();
         User user1 = new User();
         user1.setUsername("user1");
@@ -94,17 +108,18 @@ class UserControllerTest {
 
         when(service.getUsersDesc()).thenReturn(users);
 
-        ResponseEntity<List<User>> response = controller.getUsersFilter("desc");
+        ResponseEntity<List<User>> response = controller.getSortedUsers("desc");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(users, response.getBody());
     }
 
     @Test
-    public void testGetUsersFilterInvalidFilterType() {
-        ApplicationException exception = assertThrows(ApplicationException.class, () -> controller.getUsersFilter("invalid"));
-
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatus());
-        assertEquals("Filter type must be specified.", exception.getMessage());
+    public void getSortedUsersWithInvalidSortTypeThrowsApplicationException() {
+        ApplicationException exception = assertThrows(ApplicationException.class,
+                () -> controller.getSortedUsers("invalid"));
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus());
+        assertEquals("Set the sort type to asc or desc to get the list of sorted" +
+                " users in ascending or descending order.", exception.getMessage());
     }
 }

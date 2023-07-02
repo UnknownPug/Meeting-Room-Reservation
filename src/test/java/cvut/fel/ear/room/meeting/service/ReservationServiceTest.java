@@ -31,13 +31,13 @@ class ReservationServiceTest {
     private UserRepository userRepository;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         MockitoAnnotations.openMocks(this);
         reservationService = new ReservationService(reservationRepository, roomRepository, userRepository);
     }
 
     @Test
-    void getReservations() {
+    public void getReservationsReturnsValidReservationsList() {
         Reservation reservation = new Reservation();
         reservation.setId(1L);
         when(reservationRepository.findAll()).thenReturn(new ArrayList<>() {{
@@ -52,20 +52,20 @@ class ReservationServiceTest {
     }
 
     @Test
-    void getReservationById() {
+    void getReservationByIdReturnsValidReservation() {
         Reservation reservation = new Reservation();
         reservation.setId(1L);
         when(reservationRepository.findById(1L)).thenReturn(Optional.of(reservation));
 
-        Optional<Reservation> optionalReservation = reservationService.getReservationById(1L);
+        Reservation returnedReservation = reservationService.getReservationById(1L);
 
-        assertTrue(optionalReservation.isPresent());
-        assertEquals(1L, optionalReservation.get().getId());
+        assertNotNull(returnedReservation);
+        assertEquals(1L, returnedReservation.getId());
         verify(reservationRepository, times(1)).findById(1L);
     }
 
     @Test
-    void getReservationByIdNonExistent() {
+    void getReservationByIdWhenNonExistentThrowsApplicationException() {
         when(reservationRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThrows(ApplicationException.class, () -> reservationService.getReservationById(1L));

@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -32,7 +32,7 @@ public class PaymentControllerTest {
     }
 
     @Test
-    public void testGetPayments() {
+    public void testGetPaymentsReturnsValidPaymentsList() {
         List<Payment> payments = new ArrayList<>();
         Payment payment1 = new Payment();
         payment1.setId(1L);
@@ -47,25 +47,25 @@ public class PaymentControllerTest {
 
         ResponseEntity<Iterable<Payment>> response = paymentController.getPayments();
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(2, ((List<Payment>) response.getBody()).size());
+        assertEquals(2, ((List<Payment>) Objects.requireNonNull(response.getBody())).size());
     }
 
     @Test
-    public void testGetPaymentById() {
+    public void testGetPaymentByIdReturnsValidPayment() {
         Long paymentId = 1L;
         Payment payment = new Payment();
         payment.setId(paymentId);
         payment.setTotalPrice(100.0);
 
-        when(paymentService.getPaymentById(paymentId)).thenReturn(Optional.of(payment));
+        when(paymentService.getPaymentById(paymentId)).thenReturn(payment);
 
-        ResponseEntity<Optional<Payment>> response = paymentController.getPaymentById(paymentId);
+        ResponseEntity<Payment> response = paymentController.getPaymentById(paymentId);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(paymentId, response.getBody().get().getId());
+        assertEquals(paymentId, Objects.requireNonNull(response.getBody()).getId());
     }
 
     @Test
-    public void testGetPaymentsByDates() {
+    public void getPaymentsByDatesReturnsListOfPayments() {
         Payment payment = new Payment();
         payment.setDateOfCreate(LocalDateTime.now());
 

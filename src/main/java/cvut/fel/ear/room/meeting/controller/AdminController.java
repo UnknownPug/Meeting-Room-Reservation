@@ -1,7 +1,9 @@
 package cvut.fel.ear.room.meeting.controller;
 
 import cvut.fel.ear.room.meeting.dto.request.AdminRequest;
+import cvut.fel.ear.room.meeting.entity.Admin;
 import cvut.fel.ear.room.meeting.exception.ApplicationException;
+import cvut.fel.ear.room.meeting.service.AdminService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,11 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import cvut.fel.ear.room.meeting.entity.Admin;
-import cvut.fel.ear.room.meeting.service.AdminService;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping(path = "/admin")
@@ -21,7 +20,7 @@ import java.util.Optional;
 public class AdminController {
 
     private static final Logger LOG = LoggerFactory.getLogger(AdminController.class);
-    @Autowired
+
     private final AdminService adminService;
 
     @Autowired
@@ -30,29 +29,31 @@ public class AdminController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/list")
+    @GetMapping(path = "/")
     public ResponseEntity<Iterable<Admin>> getAdmins() {
         return ResponseEntity.ok(adminService.getAdmins());
     }
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(path = "/{id}")
-    public ResponseEntity<Optional<Admin>> getAdminById(@PathVariable Long id) {
-        if (id == null) {
-            throw new ApplicationException("Admin does not found.", HttpStatus.NOT_FOUND);
+    public ResponseEntity<Admin> getAdminById(@PathVariable long id) {
+        if (id <= 0) {
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Admin id must be specified.");
         }
         return ResponseEntity.ok(adminService.getAdminById(id));
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/filter")
-    public ResponseEntity<List<Admin>> getAdminsFilter(@RequestParam(value = "sort") String filterType) {
-        if (filterType.equals("asc")) {
+    @GetMapping
+    public ResponseEntity<List<Admin>> getSortedAdmins(@RequestParam(value = "sort") String sortType) {
+        if (sortType.equals("asc")) {
             return ResponseEntity.ok(adminService.getAdminsAsc());
-        } else if (filterType.equals("desc")) {
+        } else if (sortType.equals("desc")) {
             return ResponseEntity.ok(adminService.getAdminsDesc());
         } else {
-            throw new ApplicationException("Filter type must be specified.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "Set the sort type to asc or desc to get the list of sorted" +
+                            " admins in ascending or descending order.");
         }
     }
 
@@ -62,7 +63,7 @@ public class AdminController {
         if (adminRequest.username() == null
                 || adminRequest.email() == null
                 || adminRequest.password() == null) {
-            throw new ApplicationException("Admin must have all fields completed.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "All Admin fields must be completed.");
         }
         return ResponseEntity.ok(
                 adminService.createAdmin(adminRequest.username(), adminRequest.email(), adminRequest.password())
@@ -73,61 +74,63 @@ public class AdminController {
     @PostMapping(path = "/room")
     public void adminControlRoom(@RequestBody AdminRequest adminRequest) {
         if (adminRequest.id() == null) {
-            throw new ApplicationException("Admin does not found.", HttpStatus.NOT_FOUND);
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Admin id must be specified.");
         }
         if (adminRequest.roomId() == null) {
-            throw new ApplicationException("Room does not found.", HttpStatus.NOT_FOUND);
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Room id must be specified.");
         }
         adminService.adminControlRoom(adminRequest.id(), adminRequest.roomId());
-        LOG.debug("Admin {} successfully controlling room {}.", adminRequest.username(), adminRequest.roomId());
+        LOG.debug("Admin {} successfully controlling room with id {}.", adminRequest.username(), adminRequest.roomId());
     }
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping(path = "/reservation")
     public void addAdminReservation(@RequestBody AdminRequest adminRequest) {
         if (adminRequest.id() == null) {
-            throw new ApplicationException("Admin does not found.", HttpStatus.NOT_FOUND);
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Admin id must be specified.");
         }
         if (adminRequest.reservationId() == null) {
-            throw new ApplicationException("Reservation does not found.", HttpStatus.NOT_FOUND);
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Reservation id must be specified.");
         }
         adminService.addAdminReservation(adminRequest.id(), adminRequest.reservationId());
-        LOG.debug("Admin {} successfully set reservation {}.", adminRequest.username(), adminRequest.reservationId());
+        LOG.debug("Admin {} successfully set reservation with id {}.",
+                adminRequest.username(), adminRequest.reservationId());
     }
 
     @ResponseStatus(HttpStatus.OK)
     @PutMapping(path = "/{id}")
-    public void updateAdmin(@PathVariable("id") Long adminId, @RequestBody AdminRequest adminRequest) {
-        if (adminId == null) {
-            throw new ApplicationException("Admin does not found.", HttpStatus.NOT_FOUND);
+    public void updateAdmin(@PathVariable("id") long adminId, @RequestBody AdminRequest adminRequest) {
+        if (adminId <= 0) {
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Admin id must be specified.");
         }
         if (adminRequest.email() == null) {
-            throw new ApplicationException("Email filed must be completed.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "The email field for the Admin must be completed.");
         }
         adminService.updateAdmin(adminId, adminRequest.email());
-        LOG.debug("Admin {} successfully updated.", adminRequest.username());
+        LOG.debug("Admin {} was successfully updated.", adminRequest.username());
     }
 
     @ResponseStatus(HttpStatus.OK)
     @DeleteMapping(path = "/{id}")
-    public void deleteAdmin(@PathVariable("id") Long adminId) {
-        if (adminId == null) {
-            throw new ApplicationException("Admin does not found.", HttpStatus.NOT_FOUND);
+    public void deleteAdmin(@PathVariable("id") long adminId) {
+        if (adminId <= 0) {
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Admin id must be specified.");
         }
         adminService.deleteAdmin(adminId);
-        LOG.debug("Admin {} successfully deleted.", adminId);
+        LOG.debug("Admin {} was successfully deleted.", adminService.getAdminById(adminId).getUsername());
     }
 
     @ResponseStatus(HttpStatus.OK)
     @DeleteMapping(path = "/{adId}/reservation/{resId}")
-    public void deleteAdminReservation(@PathVariable("adId") Long adId, @PathVariable("resId") Long resId) {
-        if (adId == null) {
-            throw new ApplicationException("Admin does not found.", HttpStatus.NOT_FOUND);
+    public void deleteAdminReservation(@PathVariable("adId") long adId, @PathVariable("resId") long resId) {
+        if (adId <= 0) {
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Admin id must be specified.");
         }
-        if (resId == null) {
-            throw new ApplicationException("Reservation does not found.", HttpStatus.NOT_FOUND);
+        if (resId <= 0) {
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Reservation id must be specified.");
         }
         adminService.deleteAdminReservation(adId, resId);
-        LOG.debug("Reservation {} for admin {} successfully deleted.", resId, adId);
+        LOG.debug("Reservation with id {} for Admin {} was successfully deleted.", resId,
+                adminService.getAdminById(adId).getUsername());
     }
 }

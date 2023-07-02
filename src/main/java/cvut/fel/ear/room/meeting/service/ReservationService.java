@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,19 +37,13 @@ public class ReservationService {
     */
 
     public Collection<Reservation> getReservations() {
-        Collection<Reservation> reservations = repository.findAll();
-        for (Reservation reservation : reservations) {
-            addPrice(reservation);
-        }
-        return reservations;
+        return repository.findAll();
     }
 
-    public Optional<Reservation> getReservationById(Long reservationId) {
-        Reservation reservation = repository.findById(reservationId).orElseThrow(
+    public Reservation getReservationById(Long reservationId) {
+        return repository.findById(reservationId).orElseThrow(
                 () -> new ApplicationException(
-                        "Reservation with id " + reservationId + " does not exist.", HttpStatus.NOT_FOUND));
-        addPrice(reservation);
-        return Optional.of(reservation);
+                        HttpStatus.NOT_FOUND, "Reservation with id " + reservationId + " does not exist."));
     }
 
     public Collection<Reservation> getReservationsBetween(LocalDateTime timeStart, LocalDateTime timeEnd) {
@@ -64,7 +57,7 @@ public class ReservationService {
                                   LocalDateTime reservationDateTimeEnd) {
         Reservation reservation = repository.findById(reservationId).orElseThrow(
                 () -> new ApplicationException(
-                        "Reservation with id " + reservationId + " does not exist.", HttpStatus.NOT_FOUND)
+                        HttpStatus.NOT_FOUND, "Reservation with id " + reservationId + " does not exist.")
         );
         if (reservationDateTimeStart != null &&
                 !Objects.equals(reservation.getReservationDateTimeStart(), reservationDateTimeStart) &&
@@ -87,25 +80,19 @@ public class ReservationService {
     /*
      * Usage for both roles
      */
-    public ArrayList<Reservation> getReservationsByNumAsc(Integer num) {
-        if (num == null) {
-            throw new ApplicationException("Top number should be specified.", HttpStatus.BAD_REQUEST);
-        }
+    public List<Reservation> getReservationsByNumAsc(int num) {
         return getReservations(repository.findAllByIdIsNotNullOrderByPriceAsc(), num);
     }
 
-    public ArrayList<Reservation> getReservationsByNumDesc(Integer num) {
-        if (num == null) {
-            throw new ApplicationException("Top number should be specified.", HttpStatus.BAD_REQUEST);
-        }
+    public List<Reservation> getReservationsByNumDesc(Integer num) {
         return getReservations(repository.findAllByIdIsNotNullOrderByPriceDesc(), num);
     }
 
-    private ArrayList<Reservation> getReservations(ArrayList<Reservation> reservations, Integer num) {
-        ArrayList<Reservation> printReservations = new ArrayList<>();
+    private List<Reservation> getReservations(List<Reservation> reservations, Integer num) {
+        List<Reservation> printReservations = new ArrayList<>();
         if (num > repository.count()) {
-            throw new ApplicationException(
-                    "Top number can be maximum " + repository.count() + ".", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "Top number can be maximum " + repository.count() + ".");
         }
         for (int i = 0; i < num; i++) {
             printReservations.add(reservations.get(i));
@@ -115,14 +102,14 @@ public class ReservationService {
 
     public Collection<Reservation> getReservationsStart(LocalDateTime timeStart) {
         if (timeStart == null) {
-            throw new ApplicationException("Start time must be set.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "Start time must be set.");
         }
         return repository.findAllByReservationDateTimeStartAfter(timeStart);
     }
 
     public Collection<Reservation> getReservationsEnd(LocalDateTime timeEnd) {
         if (timeEnd == null) {
-            throw new ApplicationException("End time must be set.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "End time must be set.");
         }
         return repository.findAllByReservationDateTimeEndBefore(timeEnd);
     }
@@ -131,13 +118,16 @@ public class ReservationService {
                                          LocalDateTime reservationDateTimeEnd) {
         Reservation reservation = new Reservation();
         if (reservationDateTimeStart.isBefore(LocalDateTime.now())) {
-            throw new DateTimeException("Time you set is less than current time.");
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "You cannot select a date and time that has already passed.");
         }
         if (reservationDateTimeEnd.isAfter(LocalDateTime.of(
                 LocalDateTime.now().getYear(),
                 LocalDateTime.now().getMonth(),
                 reservationDateTimeEnd.toLocalDate().lengthOfMonth(), 23, 59))) {
-            throw new DateTimeException("Time you set is more than current time.");
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "You cannot select a date and time that is greater" +
+                            " than the maximum date and time of the current month.");
         }
         reservation.setPrice(0D);
         reservation.setReservationDateTimeStart(reservationDateTimeStart);
@@ -152,21 +142,21 @@ public class ReservationService {
     public void addReservationRoom(Long reservationId, Long roomId) {
         Reservation reservation = repository.findById(reservationId)
                 .orElseThrow(
-                        () -> new ApplicationException(
-                                "Reservation with id " + reservationId + " does not exist.", HttpStatus.NOT_FOUND));
+                        () -> new ApplicationException(HttpStatus.NOT_FOUND,
+                                "Reservation with id " + reservationId + " does not exist."));
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(
                         () -> new ApplicationException(
-                                "Reservation with id " + roomId + " does not exist.", HttpStatus.NOT_FOUND));
+                                HttpStatus.NOT_FOUND, "Reservation with id " + roomId + " does not exist."));
         if (reservation.getReservationsPayment() == null) {
-            throw new ApplicationException("Room cannot be added until payment is not set.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "Room cannot be added until payment is not set.");
         }
         reservation.setRoomReservation(room);
-        addPrice(reservation);
+        addPriceToReservation(reservation);
         repository.save(reservation);
     }
 
-    public void addPrice(Reservation reservation) {
+    public void addPriceToReservation(Reservation reservation) {
         Room room = reservation.getRoomReservation();
         if (room == null) {
             reservation.setPrice(0D);
@@ -191,8 +181,8 @@ public class ReservationService {
     public void deleteReservation(Long reservationId) {
         boolean exists = repository.existsById(reservationId);
         if (!exists) {
-            throw new ApplicationException(
-                    "Reservation with id " + reservationId + " does not exist.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "Reservation with id " + reservationId + " does not exist.");
         }
         // Check if there are any reservations for the user
         Set<Long> userReservedRoomIds = userRepository.findAllByUserHasReservationNotNull()
@@ -202,8 +192,9 @@ public class ReservationService {
                 .map(Reservation::getId)
                 .collect(Collectors.toSet());
         if (userReservedRoomIds.contains(reservationId)) {
-            throw new ApplicationException("Reservation with id " + reservationId + " cannot be deleted " +
-                    "because it is controlled by user.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "Reservation with id " + reservationId + " cannot be deleted " +
+                            "because it is controlled by user.");
         }
         repository.deleteById(reservationId);
     }

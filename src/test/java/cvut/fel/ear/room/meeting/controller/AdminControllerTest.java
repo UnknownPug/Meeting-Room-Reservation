@@ -14,12 +14,12 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
-import java.util.Optional;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 class AdminControllerTest {
@@ -39,22 +39,22 @@ class AdminControllerTest {
     }
 
     @Test
-    void testGetAdmins() throws Exception {
+    void getAdminsReturnsValidAdminList() throws Exception {
         Admin admin = new Admin();
         admin.setId(1L);
         when(adminService.getAdmins()).thenReturn(Collections.singletonList(admin));
 
-        mockMvc.perform(get("/admin/list"))
+        mockMvc.perform(get("/admin/"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id", is(1)));
     }
 
     @Test
-    void testGetAdminById() throws Exception {
+    void testGetAdminByIdReturnsValidAdmin() throws Exception {
         Admin admin = new Admin();
         admin.setId(1L);
-        when(adminService.getAdminById(anyLong())).thenReturn(Optional.of(admin));
+        when(adminService.getAdminById(anyLong())).thenReturn(admin);
 
         mockMvc.perform(get("/admin/1"))
                 .andExpect(status().isOk())
@@ -63,28 +63,41 @@ class AdminControllerTest {
     }
 
     @Test
-    void testGetAdminsFilter() throws Exception {
+    void getSortedAdminsReturnsAdminListSortedAscending() throws Exception {
         Admin admin = new Admin();
         admin.setId(1L);
         when(adminService.getAdminsAsc()).thenReturn(Collections.singletonList(admin));
 
-        mockMvc.perform(get("/admin/filter?sort=asc"))
+        mockMvc.perform(get("/admin?sort=asc"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0].id", is(1)));
     }
 
     @Test
-    void testDeleteAdmin() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/admin/1")
+    void testDeleteAdminReturnsSuccessfulDeletedAdmin() throws Exception {
+        Long adminId = 1L;
+        doNothing().when(adminService).deleteAdmin(adminId);
+        when(adminService.getAdminById(adminId)).thenReturn(new Admin());
+        AdminController adminController = new AdminController(adminService);
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(adminController).build();
+        mockMvc.perform(MockMvcRequestBuilders.delete("/admin/{id}", adminId)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk());
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(print());
     }
 
     @Test
-    void testDeleteAdminReservation() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.delete("/admin/1/reservation/2")
+    void testDeleteAdminReservationReturnsSuccessfulDeletedAdminReservation() throws Exception {
+        Long adminId = 1L;
+        long reservationId = 2L;
+        doNothing().when(adminService).deleteAdminReservation(adminId, reservationId);
+        when(adminService.getAdminById(adminId)).thenReturn(new Admin());
+        AdminController adminController = new AdminController(adminService);
+        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(adminController).build();
+        mockMvc.perform(MockMvcRequestBuilders.delete("/admin/{adId}/reservation/{resId}", adminId, reservationId)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(MockMvcResultMatchers.status().isOk());
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andDo(print());
     }
 }

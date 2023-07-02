@@ -32,7 +32,7 @@ public class RoomControllerTest {
     }
 
     @Test
-    public void testGetRooms_whenIsFreeIsTrue() {
+    public void getRooms_WhenIsFreeIsTrueReturnsListOfFreeRooms() {
         List<Room> freeRooms = new ArrayList<>();
         Room room1 = new Room();
         room1.setId(1L);
@@ -51,7 +51,7 @@ public class RoomControllerTest {
     }
 
     @Test
-    public void testGetRooms_whenIsFreeIsFalse() {
+    public void getRoomsWhenIsFreeIsFalseReturnsListOfAllRooms() {
         List<Room> rooms = new ArrayList<>();
         Room room1 = new Room();
         room1.setId(1L);
@@ -70,7 +70,7 @@ public class RoomControllerTest {
     }
 
     @Test
-    public void testGetRoomByName() {
+    public void testGetRoomByNameReturnsValidRoom() {
         String roomName = "Room 1";
         Room room = new Room();
         room.setId(1L);
@@ -84,13 +84,13 @@ public class RoomControllerTest {
     }
 
     @Test
-    public void testGetRoomsByCapacityFilter() {
+    public void getSortedRoomsByCapacityReturnsSortedRoomList() {
         int num = 2;
-        String filterType = "asc";
+        String sortType = "asc";
         List<Room> rooms = Arrays.asList(new Room(), new Room());
         when(roomService.getRoomsByCapacityAsc(num)).thenReturn(new ArrayList<>(rooms));
 
-        ResponseEntity<ArrayList<Room>> response = roomController.getRoomsByCapacityFilter(num, filterType);
+        ResponseEntity<List<Room>> response = roomController.getSortedRoomsByCapacity(num, sortType);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(rooms.size(), Objects.requireNonNull(response.getBody()).size());
@@ -99,13 +99,13 @@ public class RoomControllerTest {
     }
 
     @Test
-    public void testGetRoomsByNumFilter() {
+    public void getSortedRoomsByNumReturnsSortedRoomList() {
         int num = 2;
-        String filterType = "asc";
+        String sortType = "asc";
         List<Room> rooms = Arrays.asList(new Room(), new Room());
         when(roomService.getRoomsByNumAsc(num)).thenReturn(new ArrayList<>(rooms));
 
-        ResponseEntity<ArrayList<Room>> response = roomController.getRoomsByNumFilter(num, filterType);
+        ResponseEntity<List<Room>> response = roomController.getSortedRoomsByNum(num, sortType);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(rooms.size(), Objects.requireNonNull(response.getBody()).size());

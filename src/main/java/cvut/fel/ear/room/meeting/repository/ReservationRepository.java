@@ -8,7 +8,6 @@ import cvut.fel.ear.room.meeting.entity.Reservation;
 
 import javax.persistence.OrderBy;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -25,11 +24,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("reservationDateTimeEnd2") LocalDateTime reservationDateTimeEnd2
     );
 
-    ArrayList<Reservation> findAllByIdIsNotNullOrderByPriceAsc();
+    List<Reservation> findAllByIdIsNotNullOrderByPriceAsc();
 
-    ArrayList<Reservation> findAllByIdIsNotNullOrderByPriceDesc();
+    List<Reservation> findAllByIdIsNotNullOrderByPriceDesc();
 
-    List<Reservation> findAllByRoomReservationNotNull();
+    Boolean existsByRoomReservationId(Long roomId);
 
     @OrderBy("timeStart ASC")
     List<Reservation> findAllByReservationDateTimeStartAfter(LocalDateTime timeStart);

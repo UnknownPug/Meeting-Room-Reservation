@@ -14,8 +14,7 @@ import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class AdminServiceTest {
 
@@ -31,7 +30,7 @@ public class AdminServiceTest {
     }
 
     @Test
-    public void testGetAdmins() {
+    public void testGetAdminsReturnsValidAdminsList() {
         when(adminRepository.findAll()).thenReturn(Collections.emptyList());
         Collection<Admin> admins = adminService.getAdmins();
         assertTrue(admins.isEmpty());
@@ -43,9 +42,10 @@ public class AdminServiceTest {
         Admin admin = new Admin();
         admin.setId(adminId);
         when(adminRepository.findById(adminId)).thenReturn(Optional.of(admin));
-        Optional<Admin> result = adminService.getAdminById(adminId);
-        assertTrue(result.isPresent());
-        assertEquals(admin, result.get());
+        Admin result = adminService.getAdminById(adminId);
+        assertNotNull(result);
+        assertEquals(admin, result);
+        verify(adminRepository, times(1)).findById(adminId);
     }
 
     @Test

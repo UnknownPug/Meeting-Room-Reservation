@@ -33,10 +33,11 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(value = {ApplicationException.class})
     protected ResponseEntity<Object> applicationException(ApplicationException ex) {
-        return badRequest(APPLICATION_FIELD + ": " + ex.getMessage());
+        return httpResponse(APPLICATION_FIELD + ": " + ex.getMessage(), ex.getHttpStatus());
     }
 
-    private ResponseEntity<Object> badRequest(String msg) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(msg);
+    private ResponseEntity<Object> httpResponse(String msg, HttpStatus httpStatus) {
+        return ResponseEntity.status(httpStatus).body(msg);
     }
+
 }

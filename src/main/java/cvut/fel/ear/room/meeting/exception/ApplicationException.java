@@ -1,20 +1,22 @@
 package cvut.fel.ear.room.meeting.exception;
 
-import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-@Getter
 public class ApplicationException extends RuntimeException {
+    private final HttpStatus httpStatus;
+    private final String message;
 
-    private String message;
-    private HttpStatus status;
-
-    public ApplicationException(String message) {
-        super(message);
+    public ApplicationException(HttpStatus httpStatus, String message) {
+        this.httpStatus = httpStatus;
+        this.message = message;
     }
 
-    public ApplicationException(String msg, HttpStatus status) {
-        this.message = msg;
-        this.status = status;
+    public HttpStatus getHttpStatus() {
+        return httpStatus;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
     }
 }

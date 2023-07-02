@@ -12,7 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
+import java.util.List;
+
 
 @RestController
 @RequestMapping(path = "/room")
@@ -27,7 +28,8 @@ public class RoomController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/list")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @GetMapping(path = "/")
     public ResponseEntity<Iterable<Room>> getRooms(@RequestParam(value = "free") Boolean isFree) {
         if (isFree) {
             return ResponseEntity.ok(service.getFreeRooms());
@@ -37,16 +39,18 @@ public class RoomController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/filter")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @GetMapping
     public ResponseEntity<Room> getRoomByName(@RequestParam(value = "name") String roomName) {
         if (roomName == null) {
-            throw new ApplicationException("Room name not set.", HttpStatus.NOT_FOUND);
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Room name must be specified.");
         }
         return ResponseEntity.ok(service.getRoomByName(roomName));
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/list/free/between/time")
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @GetMapping(path = "/free")
     public ResponseEntity<Iterable<Room>> getFreeRoomsBetweenTime(@RequestBody RoomRequest request) {
         return ResponseEntity.ok(
                 service.getFreeRoomsBetweenTime(
@@ -57,33 +61,40 @@ public class RoomController {
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/capacity/{num}/filter")
-    public ResponseEntity<ArrayList<Room>> getRoomsByCapacityFilter(
-            @PathVariable Integer num,
-            @RequestParam(value = "sort") String filterType) {
-        if (num == null) {
-            throw new ApplicationException("Number must be specified.", HttpStatus.BAD_REQUEST);
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @GetMapping(path = "/{num}/capacity")
+    public ResponseEntity<List<Room>> getSortedRoomsByCapacity(
+            @PathVariable int num,
+            @RequestParam(value = "sort") String sortType) {
+        if (num <= 0) {
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "You must specify the number of capacity for the correct sorting of rooms.");
         }
-        if (filterType.equals("asc")) {
+        if (sortType.equals("asc")) {
             return ResponseEntity.ok(service.getRoomsByCapacityAsc(num));
         } else {
-            throw new ApplicationException("Filter type must be specified (can be only asc).", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "Set the sort type to asc to get the list of sorted rooms in ascending order.");
         }
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping(path = "/{num}/filter")
-    public ResponseEntity<ArrayList<Room>> getRoomsByNumFilter(@PathVariable Integer num,
-                                                               @RequestParam(value = "sort") String filterType) {
-        if (num == null) {
-            throw new ApplicationException("Number must be specified.", HttpStatus.BAD_REQUEST);
+    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
+    @GetMapping(path = "/{num}/limit")
+    public ResponseEntity<List<Room>> getSortedRoomsByNum(@PathVariable int num,
+                                                          @RequestParam(value = "sort") String sortType) {
+        if (num <= 0) {
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "You must specify the number of limit for the correct sorting of rooms.");
         }
-        if (filterType.equals("asc")) {
+        if (sortType.equals("asc")) {
             return ResponseEntity.ok(service.getRoomsByNumAsc(num));
-        } else if (filterType.equals("desc")) {
+        } else if (sortType.equals("desc")) {
             return ResponseEntity.ok(service.getRoomsByNumDesc(num));
         } else {
-            throw new ApplicationException("Filter type must be specified.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST,
+                    "Set the sort type to asc or desc to get the list of sorted" +
+                            " rooms in ascending or descending order.");
         }
     }
 
@@ -94,7 +105,7 @@ public class RoomController {
         if (request.name() == null ||
                 request.pricePerHour() == null ||
                 request.description() == null) {
-            throw new ApplicationException("Room parameters must be completed.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "All Room fields must be completed.");
         }
         return ResponseEntity.ok(
                 service.createRoom(
@@ -108,25 +119,25 @@ public class RoomController {
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping(path = "/{id}")
-    public void updateRoom(@PathVariable("id") Long roomId, @RequestBody RoomRequest request) {
-        if (roomId == null) {
-            throw new ApplicationException("Room does not found.", HttpStatus.NOT_FOUND);
+    public void updateRoom(@PathVariable("id") long roomId, @RequestBody RoomRequest request) {
+        if (roomId <= 0) {
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Room id must be specified.");
         }
         if (request.name() == null || request.pricePerHour() == null || request.description() == null) {
-            throw new ApplicationException("Room parameters must be completed.", HttpStatus.BAD_REQUEST);
+            throw new ApplicationException(HttpStatus.BAD_REQUEST, "All Room requested fields must be completed.");
         }
         service.updateRoom(roomId, request.name(), request.pricePerHour(), request.description());
-        LOG.debug("Room {} successfully updated.", request.name());
+        LOG.debug("Room {} was successfully updated.", request.name());
     }
 
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping(path = "/{id}")
-    public void deleteRoom(@PathVariable("id") Long roomId) {
-        if (roomId == null) {
-            throw new ApplicationException("Room not found", HttpStatus.NOT_FOUND);
+    public void deleteRoom(@PathVariable("id") long roomId) {
+        if (roomId <= 0) {
+            throw new ApplicationException(HttpStatus.NOT_FOUND, "Room id must be specified.");
         }
         service.deleteRoom(roomId);
-        LOG.debug("Room {} successfully deleted.", roomId);
+        LOG.debug("Room {} was successfully deleted.", service.getRoomById(roomId).getName());
     }
 }

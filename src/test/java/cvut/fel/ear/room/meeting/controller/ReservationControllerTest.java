@@ -1,12 +1,9 @@
 package cvut.fel.ear.room.meeting.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Optional;
-
+import cvut.fel.ear.room.meeting.dto.request.ReservationRequest;
+import cvut.fel.ear.room.meeting.entity.Reservation;
+import cvut.fel.ear.room.meeting.exception.ApplicationException;
+import cvut.fel.ear.room.meeting.service.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -14,10 +11,12 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import cvut.fel.ear.room.meeting.dto.request.ReservationRequest;
-import cvut.fel.ear.room.meeting.entity.Reservation;
-import cvut.fel.ear.room.meeting.exception.ApplicationException;
-import cvut.fel.ear.room.meeting.service.ReservationService;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 public class ReservationControllerTest {
 
@@ -33,31 +32,31 @@ public class ReservationControllerTest {
     }
 
     @Test
-    public void testGetReservations() {
+    public void testGetReservationsReturnsValidReservationsList() {
         when(service.getReservations()).thenReturn(new ArrayList<>());
         ResponseEntity<Iterable<Reservation>> response = controller.getReservations();
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test
-    public void testGetReservationById() {
-        Long reservationId = 1L;
-        when(service.getReservationById(reservationId)).thenReturn(Optional.of(new Reservation()));
-        ResponseEntity<Optional<Reservation>> response = controller.getReservationById(reservationId);
+    public void testGetReservationByIdReturnsValidReservation() {
+        long reservationId = 1L;
+        when(service.getReservationById(reservationId)).thenReturn(new Reservation());
+        ResponseEntity<Reservation> response = controller.getReservationById(reservationId);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test
-    public void testGetReservationByIdNotFound() {
+    public void testGetReservationByIdReturnsNotFoundStatus() {
         try {
-            controller.getReservationById(null);
+            controller.getReservationById(0);
         } catch (ApplicationException ex) {
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
+            assertEquals(HttpStatus.NOT_FOUND, ex.getHttpStatus());
         }
     }
 
     @Test
-    public void testGetReservationsBetween() {
+    public void getReservationsBetweenReturnsReservationList() {
         ReservationRequest reservationRequest = new ReservationRequest(1L,
                 1L, 1L,
                 10D,
@@ -69,21 +68,21 @@ public class ReservationControllerTest {
     }
 
     @Test
-    public void testGetReservationsByNumFilter() {
-        Integer num = 1;
-        String filterType = "asc";
+    public void getSortedReservationsByNumReturnsReservationList() {
+        int num = 1;
+        String sortType = "asc";
         when(service.getReservationsByNumAsc(num)).thenReturn(new ArrayList<>());
-        ResponseEntity<ArrayList<Reservation>> response = controller.getReservationsByNumFilter(num, filterType);
+        ResponseEntity<List<Reservation>> response = controller.getSortedReservationsByNum(num, sortType);
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 
     @Test
-    public void testGetReservationsByNumFilterBadRequest() {
+    public void getReservationsByNumFilterReturnsBadRequestStatus() {
         String filterType = "invalid";
         try {
-            controller.getReservationsByNumFilter(null, filterType);
+            controller.getSortedReservationsByNum(0, filterType);
         } catch (ApplicationException ex) {
-            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getHttpStatus());
         }
     }
 

@@ -36,7 +36,7 @@ public class PaymentServiceTest {
     }
 
     @Test
-    public void testGetPayments() {
+    public void testGetPaymentsReturnsValidPaymentsList() {
         List<Payment> payments = new ArrayList<>();
         payments.add(payment);
         when(paymentRepository.findAll()).thenReturn(payments);
@@ -45,7 +45,7 @@ public class PaymentServiceTest {
     }
 
     @Test(expected = ApplicationException.class)
-    public void testGetPaymentByIdNotFound() {
+    public void getPaymentByIdWhenNotFoundThrowsApplicationException() {
         when(paymentRepository.findById(anyLong())).thenReturn(Optional.empty());
         paymentService.getPaymentById(payment.getId());
     }

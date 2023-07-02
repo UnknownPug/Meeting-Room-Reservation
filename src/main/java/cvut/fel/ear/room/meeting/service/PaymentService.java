@@ -1,17 +1,16 @@
 package cvut.fel.ear.room.meeting.service;
 
+import cvut.fel.ear.room.meeting.entity.Payment;
+import cvut.fel.ear.room.meeting.entity.Reservation;
 import cvut.fel.ear.room.meeting.exception.ApplicationException;
 import cvut.fel.ear.room.meeting.repository.PaymentRepository;
 import cvut.fel.ear.room.meeting.repository.ReservationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import cvut.fel.ear.room.meeting.entity.Payment;
-import cvut.fel.ear.room.meeting.entity.Reservation;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Optional;
 
 @Service
 public class PaymentService {
@@ -29,15 +28,15 @@ public class PaymentService {
         return repository.findAll();
     }
 
-    public Optional<Payment> getPaymentById(Long paymentId) {
+    public Payment getPaymentById(Long paymentId) {
         Payment payment = repository.findById(paymentId).orElseThrow(
                 () -> new ApplicationException(
-                        "Payment with id " + paymentId + " does not exist.", HttpStatus.NOT_FOUND));
-        getTotalPrice(payment);
-        return Optional.of(payment);
+                        HttpStatus.NOT_FOUND, "Payment with id " + paymentId + " does not exist."));
+        createStartingPrice(payment);
+        return payment;
     }
 
-    public void getTotalPrice(Payment payment) {
+    public void createStartingPrice(Payment payment) {
         Double totalPrice = 0D;
 
         if (reservationRepository.findAllByReservationsPaymentNotNull() != null) {
@@ -63,7 +62,7 @@ public class PaymentService {
         Double totalPrice = 0D;
         Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(
                 () -> new ApplicationException(
-                        "Reservation with id " + reservationId + " does not exist.", HttpStatus.NOT_FOUND));
+                        HttpStatus.NOT_FOUND, "Reservation with id " + reservationId + " does not exist."));
         if (reservationRepository.findAllByReservationsPaymentNotNull() != null) {
             totalPrice += reservation.getPrice();
         }
@@ -73,11 +72,10 @@ public class PaymentService {
 
     public void addPaymentReservation(Long id, Long reservationId) {
         Payment payment = repository.findById(id).orElseThrow(
-                () -> new ApplicationException(
-                        "Payment whit id " + id + " does not exist.", HttpStatus.NOT_FOUND));
+                () -> new ApplicationException(HttpStatus.NOT_FOUND, "Payment whit id " + id + " does not exist."));
         Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(
                 () -> new ApplicationException(
-                        "Reservation with id " + reservationId + " does not exist.", HttpStatus.NOT_FOUND));
+                        HttpStatus.NOT_FOUND, "Reservation with id " + reservationId + " does not exist."));
         payment.getReservations().add(reservation);
         reservation.setReservationsPayment(payment);
         reservationRepository.save(reservation);
@@ -87,7 +85,8 @@ public class PaymentService {
     public void deletePayment(Long paymentId) {
         boolean exists = repository.existsById(paymentId);
         if (!exists) {
-            throw new ApplicationException("Payment with id " + paymentId + " does not exist.", HttpStatus.NOT_FOUND);
+            throw new ApplicationException(
+                    HttpStatus.NOT_FOUND, "Payment with id " + paymentId + " does not exist.");
         }
         repository.deleteById(paymentId);
     }

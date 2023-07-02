@@ -1,6 +1,7 @@
 package cvut.fel.ear.room.meeting.repository;
 
 import cvut.fel.ear.room.meeting.entity.Admin;
+import cvut.fel.ear.room.meeting.entity.Room;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -13,13 +14,13 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
 
     List<Admin> findAllByIdIsNotNullOrderByUsernameDesc();
 
-    List<Admin> findAllByAdminControlRoomNotNull();
-
     Admin findByUsername(String username);
 
     Admin findByEmail(String email);
 
-    boolean findAllByEmail(String email);
+    Boolean findAllByEmail(String email);
 
-    boolean findAllByUsername(String username);
+    Boolean findAllByUsername(String username);
+
+    Boolean existsByAdminControlRoomContains(Room one);
 }
