@@ -48,8 +48,10 @@
 
   - The system includes the following features for users:
 
-        ➢ User - has the possibility to book a room, cancel a reservation, see the status of the room and the time when it will be booked.
-        ➢ Administrator - has the ability to add a room, remove a room, change room properties and has the same options as the User.
+        ➢ User - has the possibility to book a room, cancel a reservation,
+          see the status of the room and the time when it will be booked.
+        ➢ Administrator - has the ability to add a room, remove a room,
+          change room properties and has the same options as the User.
 
 🔘 System limitations
 
@@ -64,7 +66,9 @@
 
   - We also have restrictions for the app:
 
-        ■ We have real-time restrictions. That is, we can't make a reservation for next year or next month, but we can only make a reservation at this time in this month.
+        ■ We have real-time restrictions.
+          That is, we can't make a reservation for next year or next month,
+          but we can only make a reservation at this time in this month.
         ■ We cannot enter incorrect dates. We will receive an error.
 
 🔘 Databases - The project uses a PostgreSQL database.
