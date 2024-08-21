@@ -78,5 +78,3 @@
 🔘 This app allows you to make a room reservation where the user can create a reservation, view its hourly price and find out information about it. On the other hand, admin has much more options than user. In addition to what the user can do, the admin has full freedom to create rooms, reservations, users and other admins and can also change them and delete them.
 
 🔘 Other - Docker Compose was alsp used in the project. information about it can be found in the [documentation](#doc).
-
-## Thank you for your attention!✌🏻
